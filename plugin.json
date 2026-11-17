@@ -1,0 +1,25 @@
+{
+  "id": "neodex.qraft",
+  "name": "Qraft",
+  "version": "1.0.0",
+  "author": "NDesumeur",
+  "description": "Fabrique des QR codes : texte, lien, Wi-Fi (le mot de passe n'est jamais enregistré), contact, e-mail, SMS ou position. Choisis le niveau de correction (L, M, Q, H), l'encre, le fond, la marge et la taille, vois la version et la place utilisée, et exporte en PNG ou SVG, ou copie l'image. Un avertissement prévient quand le contraste ou la marge rendent le code difficile à lire.",
+  "icon": "icon.png",
+  "entry": "index.js",
+  "view": "qraft",
+  "neobase": ">=4.0.0",
+  "type": "app",
+  "category": "Outils",
+  "mobile": true,
+  "compatibility": [
+    "android"
+  ],
+  "syncMode": "fusion",
+  "syncInfo": "Le contenu (sans mot de passe Wi-Fi), les réglages et les codes gardés.",
+  "system": false,
+  "dependencies": {},
+  "sdk": "2.1.0",
+  "permissions": [
+    "storage"
+  ]
+}
