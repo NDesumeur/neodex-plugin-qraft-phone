@@ -1,0 +1,9 @@
+{
+  "pluginId": "neodex.qraft",
+  "repo": "NDesumeur/neodex-plugin-qraft-phone",
+  "version": "1.0.0",
+  "sha256": "c1e0e0d807aad2724d51b8f71b4fe7ae42b760189f2a4dab46d38feaa59ad20f",
+  "approvedAt": "2026-11-17T18:40:03.534Z",
+  "neobase": ">=4.0.0",
+  "signature": "y6zGv9mzQkS57cVOHbTgshwhu3fbuj1YXrzU8sySWVwCmFxooFJXBAkXeNGgrnioOqkI3ER0YORf/hwbpG+xDw=="
+}
