@@ -123,6 +123,17 @@ const TYPES = {
   sms: ['SMS', [['tel', 'Numéro'], ['body', 'Message', 'area']], f => 'SMSTO:' + (f.tel || '') + ':' + (f.body || '')],
   geo: ['Position', [['lat', 'Latitude', '48.8584'], ['lon', 'Longitude', '2.2945']], f => 'geo:' + (f.lat || 0) + ',' + (f.lon || 0)],
 };
+// un QR code lu par l'appareil photo, remis dans le bon formulaire : [type, champs]
+function parseRead(t) {
+  let m;
+  if (/^WIFI:/i.test(t)) { const g = k => ((t.match(new RegExp('[:;]' + k + ':((?:\\\\.|[^;])*)')) || [])[1] || '').replace(/\\(.)/g, '$1'); return ['wifi', {ssid: g('S'), pass: g('P'), sec: g('T') || 'nopass', hidden: g('H') === 'true'}]; }
+  if (/^BEGIN:VCARD/i.test(t)) { const g = k => ((t.match(new RegExp('^' + k + '[^:\n]*:(.*)$', 'mi')) || [])[1] || '').trim(); return ['contact', {name: g('FN'), tel: g('TEL'), email: g('EMAIL'), org: g('ORG'), web: g('URL')}]; }
+  if ((m = /^mailto:([^?]*)\??(.*)$/i.exec(t))) { const q = new URLSearchParams(m[2]); return ['mail', {to: decodeURIComponent(m[1]), subject: q.get('subject') || '', body: q.get('body') || ''}]; }
+  if ((m = /^SMSTO:([^:]*):?([\s\S]*)$/i.exec(t))) return ['sms', {tel: m[1], body: m[2]}];
+  if ((m = /^geo:(-?[\d.]+),(-?[\d.]+)/i.exec(t))) return ['geo', {lat: m[1], lon: m[2]}];
+  if (/^https?:\/\/\S+$/i.test(t)) return ['url', {url: t}];
+  return ['text', {text: t}];
+}
 const PALETTE = ['#000000', '#1a1430', '#3a2a5a', '#7a2a6a', '#ff4fb0', '#2a6a3a', '#1a4a7a', '#7a4a1a', '#ffffff', '#fff6e0', '#e8e0ff', '#d0f0e0'];
 const lum = h => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
 export default async function (ctx) {
@@ -133,6 +144,8 @@ export default async function (ctx) {
   // vérification : les capacités connues de la norme, et l'aller-retour encode -> décode sur plusieurs tailles, niveaux et masques
   { console.assert(dataCodewords(1, 0) === 19 && dataCodewords(1, 3) === 9 && dataCodewords(10, 1) === 216 && dataCodewords(40, 0) === 2956 && dataCodewords(40, 3) === 1276 && rawModules(40) === 29648, 'qraft : capacités');
     const tests = [['Bonjour !', 'M', -1], ['https://neodex.app/é', 'L', 3], ['x'.repeat(300), 'H', -1], ['WIFI:T:WPA;S:Maison;P:abc;;', 'Q', 6], ['∑ '.repeat(500), 'L', -1]];
+    console.assert(parseRead('WIFI:T:WPA;S:Ma\\;ison;P:abc;;')[1].ssid === 'Ma;ison' && parseRead('WIFI:T:WPA;S:x;P:abc;;')[1].pass === 'abc' && parseRead('mailto:a@b.fr?subject=Salut')[1].subject === 'Salut'
+      && parseRead('SMSTO:0600:coucou')[1].body === 'coucou' && parseRead('geo:48.85,2.29')[1].lon === '2.29' && parseRead('https://x.fr')[0] === 'url' && parseRead('BEGIN:VCARD\nFN:Léa\nTEL:06\nEND:VCARD')[1].tel === '06' && parseRead('bonjour')[0] === 'text', 'qraft : lecture');
     console.assert(tests.every(([t, e, mk]) => { const q = encode(t, e, mk), d = decode(q.modules); return d.text === t && d.ecl === e && (mk < 0 || d.mask === mk); }), 'qraft : aller-retour'); }
   let data = null; try { data = await ctx.folder.read('qraft'); } catch {}
   const st = {type: data?.type || 'url', fields: data?.fields || {url: 'https://github.com/NDesumeur'}, ecl: data?.ecl || 'M', fg: data?.fg || '#000000', bg: data?.bg || '#ffffff', margin: data?.margin ?? 4, scale: data?.scale || 8, recent: data?.recent || []};
@@ -140,7 +153,15 @@ export default async function (ctx) {
   // ---------- l'interface ----------
   view.innerHTML = '';
   const wrap = el('div', 'appWrap'), head = el('div', 'agHead'), lay = el('div', 'qrGrid'), left = el('div', 'sysCard px'), right = el('div', 'sysCard px');
-  head.append(el('span', 'label', 'Qraft · QR codes')); lay.append(left, right); wrap.append(head, lay); view.append(wrap);
+  const scan = el('button', 'btn px main', '📷 Lire un QR code'); scan.style.cssText = 'width:auto;margin:0 0 0 auto';
+  head.append(el('span', 'label', 'Qraft · QR codes'), scan);
+  // le lecteur de Google, ouvert par NeoDex (autorisation « camera », demandée la première fois) : Qraft ne reçoit que le texte lu
+  scan.onclick = async () => {
+    let t; try { t = await ctx.neo.scanQR(); } catch (e) { console.warn('qraft :', e.message); toast(/PERMISSION/.test(e.message) ? 'Lecture refusée' : 'Lecture impossible'); return; }
+    if (!t) return;
+    const [type, fields] = parseRead(t); st.type = type; st.fields = fields; save(); drawTypes(); drawForm(); render();
+    toast('QR code lu');
+  }; lay.append(left, right); wrap.append(head, lay); view.append(wrap);
   const types = el('div', 'qrTypes'), form = el('div'), opts = el('div'), recentBox = el('div', 'qrRecent');
   left.append(el('span', 'label', 'Contenu'), types, form, el('span', 'label', 'Réglages'), opts, el('span', 'label', 'Récents'), recentBox);
   const can = el('canvas', 'qrCan'), g = can.getContext('2d'), info = el('div', 'qrInfo'), warn = el('div', 'qrWarn'), exp = el('div', 'qrRow');

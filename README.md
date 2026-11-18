@@ -11,6 +11,7 @@ Fabrique des QR codes en pixels nets, prêts à imprimer ou à partager.
 - Le QR code est en haut, les réglages en dessous.
 - Les fichiers exportés s'enregistrent dans le dossier Téléchargements/NeoDex du téléphone.
 - Les mêmes QR codes gardés que sur PC (même identifiant `neodex.qraft`).
+- **📷 Lire un QR code** (version 1.1.0) : ouvre le lecteur de QR code de Google avec l'appareil photo. Le contenu lu remplit le bon formulaire (lien, Wi-Fi, contact…). Qraft reçoit seulement le texte lu, jamais l'image. Demande l'autorisation « Lecteur de QR code » la première fois.
 
 ## Contenus
 

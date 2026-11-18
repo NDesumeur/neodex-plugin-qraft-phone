@@ -10,6 +10,7 @@ Make crisp pixel QR codes, ready to print or share.
 
 - The QR code is on top, the settings below.
 - Exported files are saved to the phone's Downloads/NeoDex folder.
+- **📷 Read a QR code** (version 1.1.0): opens Google's QR code reader with the camera. What was read fills the right form (link, Wi-Fi, contact…). Qraft only gets the text, never the picture. Asks for the « QR code reader » permission the first time.
 - The same saved QR codes as on PC (same id `neodex.qraft`).
 
 ## Contents
